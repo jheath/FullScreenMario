@@ -14,7 +14,7 @@ map.areas = [
     setLocationGeneration(0);
     
     pushPreCastle();
-    pushPrePattern("backreg", 0, 0, 4);
+    pushPrePattern("backreg", 0, 0, 5);
     pushPreFloor(0, 0, 123);
     fillPreThing(Brick, 80, jumplev1, 3, 1, 8);
     pushPrePipe(152, 0, 32, true, 5); // enter first underworld
@@ -158,12 +158,12 @@ map.areas = [
     pushPreThing(PipeSide, 496, 48, 2);
     pushPreThing(Stone, 504, 88, 2, 11);
   }),
-  new Area("Sky", function() { // cloud world
+  new Area("Sky Night", function() { // cloud world
     setLocationGeneration(7);
     
     pushPreThing(Stone, 0, 0, 4);
     pushPreThing(Stone, 40, 0, 78);
-    pushPreThing(PlatformTransport, 128, 24, 6, "cloud");
+    pushPreThing(Platform, 128, 24, 6, collideTransport);
     fillPreThing(Coin, 121, 55, 16, 1, 8);
     pushPreThing(Stone, 256, 40);
     fillPreThing(Coin, 273, 55, 16, 1, 8);

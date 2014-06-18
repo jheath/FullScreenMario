@@ -1,5 +1,5 @@
 /* Load.js */
-// Maps and sounds are loaded via AJAX
+// Maps are loaded via AJAX
 
 /* Maps */
 
@@ -28,14 +28,13 @@ function passivelyLoadMap(map, ajax) {
     if(ajax.status == 200) {
       // This is potentially insecure, so I'd like to use an editor-style JSON arrangement instead..
       mapfuncs[map[0]][map[1]] = Function(ajax.responseText);
-      // log("Loaded map [" + map[0] + "," + map[1] + "]");
-      if(window.parentwindow && parentwindow.onmapload) {
-        parentwindow.onmapload(map[0],map[1]);
-        setTimeout(function() { parentwindow.onmapload(map[0],map[1]); }, 2100); // just in case
+      if(window.parentwindow && parentwindow.onMapLoad) {
+        parentwindow.onMapLoad(map[0],map[1]);
+        setTimeout(function() { parentwindow.onMapLoad(map[0],map[1]); }, 2100); // just in case
       }
       mlog("Maps", " Loaded: Maps/World" + map[0] + "" + map[1] + ".js");
     }
-    // Otherwise, unless it just was a 404; return
+    // Otherwise, unless it just was a 404, return
     else if(ajax.status != 404) return;
     
     setTimeout(function() { passivelyLoadMap(setNextLevelArr(map), ajax); }, 7);
@@ -48,46 +47,4 @@ function setNextLevelArr(arr) {
     arr[1] = 1;
   }
   return arr;
-}
-
-
-/* Sounds */
-
-function startLoadingSounds() {
-  var libsounds = library.sounds;
-  setTimeout(function() { loadSounds(libsounds, library.sounds.names, "Sounds/"); }, 7);
-  setTimeout(function() { loadSounds(libsounds, library.sounds.themes, "Sounds/Themes/"); }, 14);
-}
-
-// Loads sounds (in order) from the reference into the container
-function loadSounds(container, reference, prefix) {
-  var sound, name_raw, 
-      details = {
-          preload: 'auto',
-          prefix: '',
-          used: 0
-        },
-      len, i;
-  for(i = 0, len = reference.length; i < len; ++i) {
-    name_raw = reference[i];
-    
-    // Create the sound and store it in the container
-    sound = createElement("Audio", details);
-    container[name_raw] = sound;
-    mlog("Sounds", sound)
-    
-    // Create the MP3 and OGG sources for the audio
-    sound.appendChild(createElement("Source", {
-      type: "audio/mp3",
-      src: prefix + "mp3/" + name_raw + ".mp3"
-    }));
-    sound.appendChild(createElement("Source", {
-      type: "audio/ogg",
-      src: prefix + "ogg/" + name_raw + ".ogg"
-    }));
-    
-    // This preloads the sound.
-    sound.volume = 0;
-    sound.play();
-  }
 }

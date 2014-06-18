@@ -32,7 +32,7 @@ function loadEditor(noreset) {
   // Visually update
   classAdd(body, "editor");
   classAdd(editor.sidebar, "expanded");
-  addEvent(classRemove, 35, editor.sidebar, "expanded");
+  TimeHandler.addEvent(classRemove, 35, editor.sidebar, "expanded");
   
   // Let the rest of the game know what's going on
   map.shifting = false;
@@ -131,8 +131,10 @@ function setEditorLibrary() {
         },
         prefunc_custom: function(prestatement, placer, reference, args) {
           var output = "Brick, ";
-          output += prestatement.xloc + ", " + (prestatement.yloc) + ", ";
-          output += placer.contents[0].name;
+          output += prestatement.xloc + ", " + (prestatement.yloc);
+          if(placer.contents) {
+            output += ", " + placer.contents[0].name;
+          }
           return output;
         }
       },
@@ -148,7 +150,7 @@ function setEditorLibrary() {
           else output.push(window[pairs.contents]);
           
           if(pairs.hidden == "True") {
-            addEvent(function() { editor.follower.hidden = true; });
+            TimeHandler.addEvent(function() { editor.follower.hidden = true; });
             output.push(1);
           }
           return output;
@@ -448,12 +450,12 @@ function editorScrollingStart(event) {
   var scroller = event.target,
       dx = scroller.dx;
   editorPreventClicks();
-  editor.scrolling = addEventInterval(editorScrolling, 1, Infinity, -dx);
+  editor.scrolling = TimeHandler.addEventInterval(editorScrolling, 1, Infinity, -dx);
   classRemove(editor.scrollers["left"], "off");
 }
 function editorScrollingStop() {
-  addEvent(editorClickOff, 3);
-  clearEventInterval(editor.scrolling);
+  TimeHandler.addEvent(editorClickOff, 3);
+  TimeHandler.clearEvent(editor.scrolling);
 }
 function editorScrolling(dx) {
   scrollEditor(dx);
@@ -937,7 +939,7 @@ function editorFollowerUpdateStandard(reference, pairs) {
   // Hidden is a necessary check
   if(pairs.hidden == "True") {
     // This is an event because these are set before the new follower is made
-    addEvent(function() { editor.follower.hidden = true; });
+    TimeHandler.addEvent(function() { editor.follower.hidden = true; });
   }
   
   // More importantly, check for width and height
@@ -963,7 +965,7 @@ function editorClickControl(event) {
 }
 function editorPreventClicks() {
   editor.clicking = true;
-  addEvent(editorClickOff, 3);
+  TimeHandler.addEvent(editorClickOff, 3);
 }
 function editorClickOff() {
   if(window.editor) editor.clicking = false;
@@ -974,7 +976,7 @@ function editorControlUndo() {
   var placed = editor.placed,
       last = placed.pop();
   
-  if(last && !last.mario) {
+  if(last && !last.player) {
     killNormal(last);
   }  
 }
@@ -985,7 +987,7 @@ function editorControlReset() {
       len = placed.length,
       timer = roundDigit(35 / len, 21);
   
-  addEventInterval(editorControlUndo, timer, len);
+  TimeHandler.addEventInterval(editorControlUndo, timer, len);
 }
 
 // Creates the function and displays the submission window to the user
@@ -1149,7 +1151,7 @@ function eraserErases(me) {
   // If this touches anything in placed
   for(i = arr.length - 1; i >= 0; --i) {
     other = arr[i];
-    if(other.mario || other == editor.follower) continue;
+    if(other.player || other == editor.follower) continue;
     // These ones touch:
     if(objectsTouch(me, other)) {
       // Kill the other
@@ -1178,8 +1180,8 @@ function addThingsToPlaced() {
   // Grab all the Things, and sort them
   editor.placed = (editor.placed || []).concat(characters).concat(solids).concat(scenery);
   placed.sort(prethingsorter);
-  // (don't include Mario in this)
-  placed.splice(placed.indexOf(mario), 1);
+  // (don't include player in this)
+  placed.splice(placed.indexOf(player), 1);
   
   // Make the new placed all know their reference
   for(i = placed.length - 1; i >= 0; --i) {
@@ -1316,8 +1318,8 @@ function editorSubmitGameFunc() {
   setMap(["Custom", "Map"]);
   window.canedit = editor.playing = false;
   
-  // Load mario and all things 
-  entryBlank(mario);
+  // Load player and all things 
+  entryBlank(player);
   addThingsToPlaced();
   
   // Save and close
@@ -1342,13 +1344,13 @@ function editorSubmitLoad() {
   editorSubmitGameFunc();
 }
 
-// Allows Mario to roam the world
+// Allows player to roam the world
 function editorStartPlaying() {
   editorPreventClicks();
   editor.playing = true;
-  // Place a Mario normally
-  placeMario();
-  entryPlain(mario);
+  // Place a player normally
+  placePlayer();
+  entryPlain(player);
   nokeys = false;
   // Retrieve each thing
   var placed = editor.placed,

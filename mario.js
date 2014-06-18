@@ -19,18 +19,6 @@ function FullScreenMario() {
                       Sounds: false,
                       };
   
-  // Oh, HTML5.
-  // http://matt.scharley.me/2012/03/09/monkey-patch-name-ie.html
-  if(Function.prototype.name === undefined && Object.defineProperty !== undefined) {
-    Object.defineProperty(Function.prototype, 'name', {
-        get: function() {
-            var funcNameRegex = /function\s([^(]{1,})\(/,
-                results = (funcNameRegex).exec((this).toString());
-            return (results && results.length > 1) ? results[1].trim() : "";
-        },
-        set: function(value) {}
-    });
-  }
   window.requestAnimationFrame = window.requestAnimationFrame
                            || window.mozRequestAnimationFrame
                            || window.webkitRequestAnimationFrame
@@ -46,25 +34,23 @@ function FullScreenMario() {
   window.Uint8ClampedArray = window.Uint8ClampedArray
                           || window.Uint8Array
                           || Array;
-  // Because the shiv will mess this up for sprites.js detection                          
-  window.Uint8ArrayName = Uint8ClampedArray.name || "Uint8Array"; // ie
 
   // Resetting everything may take a while
   resetMeasurements();
-  resetLibrary(); // A good 300+ ms right here
+  resetLibrary();
+  resetEvents();
   resetCanvas();
   resetMaps();
   resetScenery();
   resetTriggers();
   resetSeed();
   resetSounds();
-  
+
+  window.luigi = (localStorage && localStorage.luigi == "true");
+
   // With that all set, set the map to World11.
   window.gameon = true;
   setMap(1,1);
-  
-  // Load sounds after setting the map, since it uses clearAllTimeouts
-  startLoadingSounds();
   
   log("It took " + (Date.now() - time_start) + " milliseconds to start.");
 }
@@ -153,6 +139,90 @@ function resetGameScreenPosition(me) {
   me.unitwidth = innerWidth;
 }
 
+// Events are done with TimeHandlr.js
+// This helps make timing obey pauses, and makes class cycles much easier
+function resetEvents() {
+  window.TimeHandler = new TimeHandlr({
+    onSpriteCycleStart: "onadding",
+    doSpriteCycleStart: "placed",
+    cycleCheckValidity: "alive",
+    timingDefault: 9
+  });
+}
+
+// Sounds are done with AudioPlayr.js
+function resetSounds() {
+  window.sounds = {};
+  window.theme = false;
+  window.muted = (localStorage && localStorage.muted == "true");
+  
+  window.AudioPlayer = new AudioPlayr({
+    directory: "Sounds",
+    getVolumeLocal: function() { return .49; },
+    getThemeDefault: function() { return area.theme; }, 
+    library: {
+      Sounds: [
+        "Bowser Falls",
+        "Bowser Fires",
+        "Break Block",
+        "Bump",
+        "Coin",
+        "Ending",
+        "Fireball",
+        "Firework",
+        "Flagpole",
+        "Gain Life",
+        "Game Over 2",
+        "Game Over",
+        "Hurry",
+        "Into the Tunnel",
+        "Jump Small",
+        "Jump Super",
+        "Kick",
+        "Level Complete",
+        "Player Dies",
+        "Pause",
+        "Pipe",
+        "Power Down",
+        "Powerup Appears",
+        "Powerup",
+        "Stage Clear",
+        "Vine Emerging",
+        "World Clear",
+        "You Dead"
+      ],
+      Themes: [
+        "Castle",
+        "Overworld",
+        "Underwater",
+        "Underworld",
+        "Star",
+        "Sky",
+        "Hurry Castle",
+        "Hurry Overworld",
+        "Hurry Underwater",
+        "Hurry Underworld",
+        "Hurry Star",
+        "Hurry Sky"
+      ]
+    }
+  });
+}
+
+// Quadrants are done with QuadsKeepr.js
+// This starts off with 7 cols and 6 rows (each has 1 on each side for padding)
+function resetQuadrants() {
+  window.QuadsKeeper = new QuadsKeepr({
+    num_rows: 5,
+    num_cols: 6,
+    screen_width: window.innerWidth,
+    screen_height: window.innerHeight,
+    tolerance: unitsized2,
+    onUpdate: spawnMap,
+    onCollide: false
+  });
+}
+
 // Variables regarding the state of the game
 // This is called in setMap to reset everything
 function resetGameState(nocount) {
@@ -162,7 +232,7 @@ function resetGameState(nocount) {
   resetData();
   window.nokeys = window.spawning = window.spawnon =
     window.notime = window.editing = window.qcount = window.lastscroll = 0;
-  window.paused = window.gameon = true;
+  window.paused = window.gameon = window.speed = 1;
   // Shifting location shouldn't wipe the gamecount (for key histories)
   if(!nocount) window.gamecount = 0;
   // And quadrants
@@ -170,8 +240,7 @@ function resetGameState(nocount) {
   // Keep a history of pressed keys
   window.gamehistory = [];
   // Clear audio
-  pauseAllSounds();
-  sounds = {};
+  AudioPlayer.pause();
 }
 
 function scrollWindow(x, y) {
@@ -184,9 +253,9 @@ function scrollWindow(x, y) {
   shiftAll(characters, xinv, yinv);
   shiftAll(solids, xinv, yinv);
   shiftAll(scenery, xinv, yinv);
-  shiftAll(quads, xinv, yinv);
+  shiftAll(QuadsKeeper.getQuadrants(), xinv, yinv);
   shiftElements(texts, xinv, yinv);
-  updateQuads(xinv);
+  QuadsKeeper.updateQuadrants(xinv);
   
   if(window.playediting) scrollEditor(x, y);
 }
@@ -202,15 +271,15 @@ function shiftElements(stuff, x, y) {
   }
 }
 
-// Similar to scrollWindow, but saves mario's x-loc
-function scrollMario(x, y, see) {
-  var saveleft = mario.left,
-      savetop = mario.top;
+// Similar to scrollWindow, but saves the player's x-loc
+function scrollPlayer(x, y, see) {
+  var saveleft = player.left,
+      savetop = player.top;
   y = y || 0;
   scrollWindow(x,y);
-  setLeft(mario, saveleft, see);
-  setTop(mario, savetop + y * unitsize, see);
-  updateQuads();
+  setLeft(player, saveleft, see);
+  setTop(player, savetop + y * unitsize, see);
+  QuadsKeeper.updateQuadrants();
 }
 
 // Calls log if window.verbosity has the type enabled
