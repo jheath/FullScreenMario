@@ -1140,7 +1140,7 @@ function World11(map) {
       pushPreThing(Block, 128, jumplev1);
       pushPreThing(Brick, 160, jumplev1);
       pushPreThing(Block, 168, jumplev1, Mushroom);
-      pushPreThing(Goomba, 176, 8);
+      pushPreThing(Brick, 176, 8);
       pushPreThing(Brick, 176, jumplev1);
       pushPreThing(Block, 176, jumplev2);
       pushPreThing(Block, 184, jumplev1);
