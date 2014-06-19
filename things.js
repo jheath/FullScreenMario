@@ -483,11 +483,13 @@ function Goomba(me) {
   me.speed = unitsize * .21;
   me.toly = unitsize;
   me.moveleft = me.noflip = true;
-  me.smart = false;
+  me.smart = true;
   me.group = "enemy";
   me.movement = moveSimple;
   me.collide = collideEnemy;
   me.death = killGoomba;
+  me.gravity = 0.1;
+  me.winged = true;
   setCharacter(me, "goomba");
   TimeHandler.addSpriteCycleSynched(me, [unflipHoriz, flipHoriz]);
 }
