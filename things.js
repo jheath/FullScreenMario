@@ -490,7 +490,7 @@ function Goomba(me) {
   me.death = killGoomba;
   me.gravity = 0.001;
   me.winged = true;
-  setCharacter(me, 'luigi);
+  setCharacter(me, 'luigi');
   TimeHandler.addSpriteCycleSynched(me, [unflipHoriz, flipHoriz]);
 }
 // Big: true if it should skip squash (fire, shell, etc)
